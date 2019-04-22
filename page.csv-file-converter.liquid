@@ -1,0 +1,164 @@
+{% comment %}ly_global_begin{% endcomment %}{% include 'ly-global' %}{% comment %}ly_global_end{% endcomment %}
+<!-- /templates/page.liquid -->
+
+<div class="page-title">
+  <h1>{% comment %}ly_code_replace_for_[ page.title ]_begin{% endcomment %}{% include 'ly-title' with page %}{{ ly_translation }}{% comment %}ly_code_replace_end{% endcomment %}</h1>
+</div>
+
+
+<div class="main-container container"> 
+  <div class="page-container">
+    <div class="rte">
+      {% comment %}ly_code_replace_for_[ page.content ]_begin{% endcomment %}{% include 'ly-content' with page %}{{ ly_translation }}{% comment %}ly_code_replace_end{% endcomment %}
+    </div>
+
+    <div class="col-12">
+      <form id="convert-form">
+        <div class="form-group">
+          <label for="csvText">CSV Text</label>
+          <textarea class="form-control" id="csvText" rows="10"></textarea>
+        </div>
+        <div class="form-group">
+          <label for="csvFile">CSV File Upload</label>
+          <input type="file" class="form-control-file" id="csvFile">
+        </div>
+        
+        <div class="form-group text-center">
+          <button id="convert-button" type="button" class="btn btn-primary btn-large">Convert</button>
+        </div>
+      </form>
+    </div>
+    
+    <div class="col-12">
+      <div id="convert-result-area">
+        <h3>Result String</h3>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<!-- BTOWNWEB -->
+<script>
+  //Duc's Functions
+  // function csvToNestedJson(){
+  //   var csvText = $('#csvText').val();
+  //   var items = $.csv.toObjects(csvText);
+  //   var jsonObject = JSON.stringify(items);
+  //   var keyNum = Object.keys(items[0]).length; // 5
+  //   var keyArr = Object.keys(items[0]) // ["MODEL YEAR", "MODEL NAME", "PACKAGE", "ENGINE", "PLATFORM"]
+  //   // console.log(keyArr);
+  //   // console.log(Object.values(items[0]))
+  //
+  //   var nestedJson = [];
+  //   var queue = [];
+  //
+  //   for (let index = 0; index < array.length; index++) {
+  //     var keyIndex = 0;
+  //     var currentKey = keyArr[keyIndex];
+  //     currentValue = Object.values(item)[keyIndex]; //2019
+  //     console.log(currentKey,currentValue);
+  //
+  //   }
+  // }
+  //
+  // $('#convert-button').on('click', function(){
+  //   csvToNestedJson();
+  // });
+
+  //Zach's Functions
+  function tsvJSON(tsv){
+
+      let singleRow = tsv.split(/\r\n|\n/);
+      let header = singleRow[0].split('\t');
+      for (let i = 0; i < header.length; i++)
+      {
+          header[i] = header[i].replace(/\s/g, '');
+      }
+      let result =[];
+
+      for (let i = 1; i < singleRow.length; i++) {
+          let elementData = singleRow[i].split('\t');
+          elementData = elementData.filter(function(n) { return n !== '' });
+          let Obj = {};
+          for ( let j=0; j < header.length; j++ ){
+              Obj[header[j]] = elementData[j];
+          }
+          result.push(Obj);
+      }
+
+      console.log(result);
+
+// Post-processing code starts here
+      const year = {};
+
+// Create a map of unique year first
+      result.forEach(function (object) {
+          if (!year[object.ModelYear]) {
+              year[object.ModelYear] = {
+                  //Setup Structure based on first object
+                  ModelYear: object.ModelYear,
+                  ModelNames: [{
+                          ModelName: object.ModelName,
+                          Packages: [{
+                                  Package: object.Package,
+                                  Engines: [{
+                                          Engine: object.Engine,
+                                          Platforms: [{
+                                                  Platform: object.Platform
+                                              }]
+                                      }]
+                              }]
+                      }]
+              };
+          }
+          let parentItem = "ModelYear";
+          createNewItem(year[object.ModelYear], year[object.ModelYear].ModelNames, "Packages");
+
+          function createNewItem(parent, current, child) {
+              console.log(parent);
+              console.log(current);
+              console.log(child);
+              for (let position in current) {
+                  for (let subItem in current[position])
+                  {
+                      if (typeof(current[position][subItem])!=='object') {
+                          if ((parent[parentItem] === object[parentItem] ||
+                              parent[position][parentItem] === object[parentItem]) &&
+                              !current.some(item => item[subItem] === object[subItem]))
+                          {
+                              parentItem = subItem;
+                              if (child) {
+                                  current.push({[subItem]: object[subItem], [child]: []});
+                              }
+                              else {
+                                  current.push({[subItem]: object[subItem]});
+                              }
+                          }
+                      }
+                      else if (current[position][subItem].length > 0) {
+                          if (Object.keys(current[position][subItem][0])[1]) {
+                              createNewItem(current, current[position][subItem], Object.keys(current[position][subItem][0])[1]);
+                          }
+                      }
+                  }
+              }
+          }
+      });
+
+// Convert back into an array
+      const yearList = [];
+      Object.keys(year).forEach(function (primaryId) {
+          yearList.push(year[primaryId]);
+      });
+
+      console.log(yearList);
+      //return result; //JavaScript object
+      $('#convert-result-area').append(JSON.stringify(yearList)); //JSON
+  }
+
+  $('#convert-button').on('click', function() {
+    let tsvText = $('#csvText').val();
+    tsvJSON(tsvText);
+  });
+</script>
