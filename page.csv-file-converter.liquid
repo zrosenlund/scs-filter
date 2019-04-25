@@ -91,6 +91,9 @@
 
 // Post-processing code starts here
       const year = {};
+      let parent = [];
+      let parentProp = "ModelName";
+      let parentItem = "";
 
 // Create a map of unique year first
       result.forEach(function (object) {
@@ -112,33 +115,64 @@
                       }]
               };
           }
-          let parentItem = "ModelYear";
-          createNewItem(year[object.ModelYear], year[object.ModelYear].ModelNames, "Packages");
+          else {
+              // Different Function I'm looking at
+              // getObject(year);
+              //
+              // function getObject(theObject, index) {
+              //     let output = null;
+              //     if(theObject instanceof Array) {
+              //         parent = theObject;
+              //         for(let i = 0; i < theObject.length; i++) {
+              //             output = getObject(theObject[i], i);
+              //             if (output) {
+              //                 break;
+              //             }
+              //         }
+              //     }
+              //     else
+              //     {
+              //         for(let prop in theObject) {
+              //             if(parent.length !== 0 &&
+              //                 parent[index][parentProp] === object[parentProp] && theObject[prop] !== object[prop]) {
+              //                     parentProp = prop;
+              //                     return parent.push({[prop]: object[prop], children: []});
+              //             }
+              //             if(theObject[prop] instanceof Object || theObject[prop] instanceof Array) {
+              //                 output = getObject(theObject[prop], 0);
+              //                 if (output) {
+              //                     break;
+              //                 }
+              //             }
+              //         }
+              //     }
+              //     return output;
+              // }
 
-          function createNewItem(parent, current, child) {
-              console.log(parent);
-              console.log(current);
-              console.log(child);
-              for (let position in current) {
-                  for (let subItem in current[position])
-                  {
-                      if (typeof(current[position][subItem])!=='object') {
-                          if ((parent[parentItem] === object[parentItem] ||
-                              parent[position][parentItem] === object[parentItem]) &&
-                              !current.some(item => item[subItem] === object[subItem]))
-                          {
-                              parentItem = subItem;
-                              if (child) {
-                                  current.push({[subItem]: object[subItem], [child]: []});
-                              }
-                              else {
-                                  current.push({[subItem]: object[subItem]});
+              console.log("Object: ", object);
+
+              createNewItem("", 0, year[object.ModelYear].ModelNames, "Packages");
+
+              function createNewItem(parent, parentIndex, current, child) {
+                  for (let position in current) {
+                      for (let subItem in current[position]) {
+                          if (typeof (current[position][subItem]) !== 'object') {
+                              console.log(subItem + ": " + current[position][subItem] + " -- " + object[subItem]);
+                              if ((parent === "" || parent[parentIndex][parentItem] === object[parentItem]) &&
+                                  !current.some(item => item[subItem] === object[subItem])) {
+                                  parentItem = subItem;
+
+                                  if (child) {
+                                      current.push({[subItem]: object[subItem], [child]: []});
+                                  } else {
+                                      current.push({[subItem]: object[subItem]});
+                                  }
                               }
                           }
-                      }
-                      else if (current[position][subItem].length > 0) {
-                          if (Object.keys(current[position][subItem][0])[1]) {
-                              createNewItem(current, current[position][subItem], Object.keys(current[position][subItem][0])[1]);
+                          else if (current[position][subItem].length > 0) {
+                              if (Object.keys(current[position][subItem][0])[1]) {
+                                  createNewItem(current, Number(position), current[position][subItem], Object.keys(current[position][subItem][0])[1]);
+                              }
                           }
                       }
                   }
